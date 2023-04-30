@@ -9,22 +9,25 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Подключение пакетов
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r,warning=FALSE, message = FALSE, error=FALSE}
+library(arrow)
+library(dplyr)
+library(stringr)
 ```
 
-## Including Plots
+### 1.Импорт датасета
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r,warning=FALSE, message = FALSE, error=FALSE}
+file <- arrow::read_csv_arrow("gowiththeflow_20190826.csv",schema = schema(timestamp=int64(),src=utf8(),dst=utf8(),port=int32(),bytes=int32()))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### 2. Создание поля - признака сети
+
+```{r,warning=FALSE, message = FALSE, error=FALSE}
+file <- file %>%
+  select(src,bytes) %>%
+  mutate(inside = str_detect(src, "^((12|13|14)\\.)"))
+
+```
