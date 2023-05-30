@@ -74,13 +74,24 @@
 
 #### Код построения графика
 
-\#####dataset %&gt;% \##### select(timestamp, src, dst, bytes) %&gt;%
-\##### mutate(external\_traffic = (str\_detect(src, “^((12|13|14)\\.)”)
-& !str\_detect(dst, “^((12|13|14)\\.)”)), hour =
-hour(as\_datetime(timestamp/1000))) %&gt;% \#####
-filter(external\_traffic == TRUE, hour &gt;= 0 & hour &lt;= 24) %&gt;%
-\##### group\_by(hour) %&gt;% \##### summarise(packets = n()) %&gt;%
-\##### collect() %&gt;% \##### ggplot(., aes(x = hour, y = packets)) +
-\##### geom\_line(color = “red”, size = 1.5) + \##### geom\_point(color
-= “black”, size = 3) + \##### labs(title = “Распределение отправленных
-пакет каждый час”, x = “Час”, y = “Количество пакетов”)
+##### dataset %&gt;%
+
+##### select(timestamp, src, dst, bytes) %&gt;%
+
+##### mutate(external\_traffic = (str\_detect(src, “^((12|13|14)\\.)”) & !str\_detect(dst, “^((12|13|14)\\.)”)), hour = hour(as\_datetime(timestamp/1000))) %&gt;%
+
+##### filter(external\_traffic == TRUE, hour &gt;= 0 & hour &lt;= 24) %&gt;%
+
+##### group\_by(hour) %&gt;%
+
+##### summarise(packets = n()) %&gt;%
+
+##### collect() %&gt;%
+
+##### ggplot(., aes(x = hour, y = packets)) +
+
+##### geom\_line(color = “red”, size = 1.5) +
+
+##### geom\_point(color = “black”, size = 3) +
+
+##### labs(title = “Распределение отправленных пакет каждый час”, x = “Час”, y = “Количество пакетов”)

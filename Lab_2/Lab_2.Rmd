@@ -39,15 +39,15 @@ dataset <- arrow::open_dataset("gowiththeflow_20190826.csv", format = "csv", sch
 
 #### Код построения графика
 
-#####dataset %>%
-#####  select(timestamp, src, dst, bytes) %>%
-#####  mutate(external_traffic = (str_detect(src, "^((12|13|14)\\.)") & !str_detect(dst, "^((12|13|14)\\.)")), hour = hour(as_datetime(timestamp/1000))) %>%
-#####  filter(external_traffic == TRUE, hour >= 0 & hour <= 24) %>%
-#####  group_by(hour) %>%
-#####  summarise(packets = n()) %>%
-#####  collect() %>%
-#####  ggplot(., aes(x = hour, y = packets)) +
-#####  geom_line(color = "red", size = 1.5) +
-#####  geom_point(color = "black", size = 3) +
-#####  labs(title = "Распределение отправленных пакет каждый час", x = "Час", y = "Количество пакетов")
+##### dataset %>%
+##### select(timestamp, src, dst, bytes) %>%
+##### mutate(external_traffic = (str_detect(src, "^((12|13|14)\\.)") & !str_detect(dst, "^((12|13|14)\\.)")), hour = hour(as_datetime(timestamp/1000))) %>%
+##### filter(external_traffic == TRUE, hour >= 0 & hour <= 24) %>%
+##### group_by(hour) %>%
+##### summarise(packets = n()) %>%
+##### collect() %>%
+##### ggplot(., aes(x = hour, y = packets)) +
+##### geom_line(color = "red", size = 1.5) +
+##### geom_point(color = "black", size = 3) +
+##### labs(title = "Распределение отправленных пакет каждый час", x = "Час", y = "Количество пакетов")
 
