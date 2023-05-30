@@ -2,7 +2,7 @@
 title: "Lab_1"
 author: "Oleg Orlovsky"
 date: "2023-03-15"
-output: html_document
+output: md_document
 ---
 
 ```{r setup, include=FALSE}
