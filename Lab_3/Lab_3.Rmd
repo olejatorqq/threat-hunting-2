@@ -63,9 +63,9 @@ dataframe %>%
 ### Список количества хостов к портам
 ```{r,warning=FALSE, message=FALSE, error=FALSE}
 dataframe %>%
-  group_by(src, port) %>%
-  summarise(total_data=sum(total_bytes)) %>%
-  arrange(desc(total_data)) %>%
+  group_by(port) %>%
+  summarise(hosts=n()) %>%
+  arrange(hosts) %>%
   head(10) %>%
   collect()
 ```
