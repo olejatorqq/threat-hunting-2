@@ -1,41 +1,9 @@
+### Подключение пакетов
+
     library(arrow)
-
-    ## Some features are not enabled in this build of Arrow. Run `arrow_info()` for more information.
-
-    ## 
-    ## Attaching package: 'arrow'
-
-    ## The following object is masked from 'package:utils':
-    ## 
-    ##     timestamp
-
     library(dplyr)
-
-    ## 
-    ## Attaching package: 'dplyr'
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     filter, lag
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     intersect, setdiff, setequal, union
-
     library(stringr)
     library(lubridate)
-
-    ## 
-    ## Attaching package: 'lubridate'
-
-    ## The following object is masked from 'package:arrow':
-    ## 
-    ##     duration
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     date, intersect, setdiff, union
-
     library(ggplot2)
 
 ### Импорт датасета
@@ -48,9 +16,17 @@
 
 #### Построив график, видно, что основная активность приходилась на 15:00-24:00 =&gt; Это и является рабочим временеи
 
+#### Из датасета выбираются столбцы, затем данные собираются
+
+#### Создаются новые перменные и фильтруются строки по часам от 0 до 15
+
+#### Группируются данные по уникальным значениям столбца и вычисляется сумма значений столбца bytes
+
+#### Строки упорядочиваются
+
             dataset %>%
               select(timestamp, src, dst, bytes) %>%
-              collect() %>% # Add this line to collect data into R
+              collect() %>%
               mutate(outside_traffic = (str_detect(src,"^((12|13|14)\\.)")&!str_detect(dst,"^((12|13|14)\\.)")), hour = hour(as.POSIXlt(timestamp/1000, origin = "1970-01-01"))) %>%
               filter(outside_traffic == TRUE, hour >=0 & hour <= 15) %>%
               group_by(src) %>%
@@ -74,24 +50,14 @@
 
 #### Код построения графика
 
-##### dataset %&gt;%
-
-##### select(timestamp, src, dst, bytes) %&gt;%
-
-##### mutate(external\_traffic = (str\_detect(src, “^((12|13|14)\\.)”) & !str\_detect(dst, “^((12|13|14)\\.)”)), hour = hour(as\_datetime(timestamp/1000))) %&gt;%
-
-##### filter(external\_traffic == TRUE, hour &gt;= 0 & hour &lt;= 24) %&gt;%
-
-##### group\_by(hour) %&gt;%
-
-##### summarise(packets = n()) %&gt;%
-
-##### collect() %&gt;%
-
-##### ggplot(., aes(x = hour, y = packets)) +
-
-##### geom\_line(color = “red”, size = 1.5) +
-
-##### geom\_point(color = “black”, size = 3) +
-
-##### labs(title = “Распределение отправленных пакет каждый час”, x = “Час”, y = “Количество пакетов”)
+      dataset %>%
+      select(timestamp, src, dst, bytes) %>%
+      mutate(external_traffic = (str_detect(src, "^((12|13|14)\\.)") & !str_detect(dst, "^((12|13|14)\\.)")), hour = hour(as_datetime(timestamp/1000))) %>%
+      filter(external_traffic == TRUE, hour >= 0 & hour <= 24) %>%
+      group_by(hour) %>%
+      summarise(packets = n()) %>%
+      collect() %>%
+      ggplot(., aes(x = hour, y = packets)) +
+      geom_line(color = "red", size = 1.5) +
+      geom_point(color = "black", size = 3) +
+      labs(title = "Распределение отправленных пакет каждый час", x = "Час", y = "Количество пакетов")
