@@ -33,5 +33,4 @@ filter(file,str_detect(src,"^((12|13|14)\\.)"),
   summarise(bytes=sum(bytes))%>%
   slice_max(bytes)%>%
   select(src)
-
 ```
