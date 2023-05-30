@@ -1,0 +1,53 @@
+---
+title: ""
+author: "Oleg Orlovsky"
+date: '2023-04-12'
+output: md_document
+---
+
+```{r}
+library(arrow)
+library(dplyr)
+library(stringr)
+library(lubridate)
+library(ggplot2)
+```
+### Импорт датасета
+
+```{r,warning=FALSE, message=FALSE, error=FALSE}
+dataset <- arrow::open_dataset("gowiththeflow_20190826.csv", format = "csv", schema = schema(timestamp=int64(),src=utf8(),dst=utf8(),port=uint32(),bytes=uint32()))
+
+```
+### Задание 2: Надите утечку данных 2
+
+#### График распределения количества пакетов за каждый час
+
+
+
+#### Построив график, видно, что основная активность приходилась на 15:00-24:00 => Это и является рабочим временеи
+```{r,warning=FALSE, message=FALSE, error=FALSE}
+        dataset %>%
+          select(timestamp, src, dst, bytes) %>%
+          collect() %>% # Add this line to collect data into R
+          mutate(outside_traffic = (str_detect(src,"^((12|13|14)\\.)")&!str_detect(dst,"^((12|13|14)\\.)")), hour = hour(as.POSIXlt(timestamp/1000, origin = "1970-01-01"))) %>%
+          filter(outside_traffic == TRUE, hour >=0 & hour <= 15) %>%
+          group_by(src) %>%
+          summarise(total_bytes = sum(bytes)) %>%
+          arrange(desc(total_bytes))  %>%
+          head(10)
+```
+
+#### Код построения графика
+
+#####dataset %>%
+#####  select(timestamp, src, dst, bytes) %>%
+#####  mutate(external_traffic = (str_detect(src, "^((12|13|14)\\.)") & !str_detect(dst, "^((12|13|14)\\.)")), hour = hour(as_datetime(timestamp/1000))) %>%
+#####  filter(external_traffic == TRUE, hour >= 0 & hour <= 24) %>%
+#####  group_by(hour) %>%
+#####  summarise(packets = n()) %>%
+#####  collect() %>%
+#####  ggplot(., aes(x = hour, y = packets)) +
+#####  geom_line(color = "red", size = 1.5) +
+#####  geom_point(color = "black", size = 3) +
+#####  labs(title = "Распределение отправленных пакет каждый час", x = "Час", y = "Количество пакетов")
+
