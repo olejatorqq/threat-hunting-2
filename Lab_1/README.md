@@ -1,1 +1,0 @@
-# threat-hunting-2
