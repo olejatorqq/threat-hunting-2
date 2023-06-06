@@ -1,10 +1,11 @@
 ### Подключение пакетов
 
-    library(arrow)
-    library(dplyr)
-    library(stringr)
-    library(lubridate)
-    library(ggplot2)
+        library(arrow)
+        library(dplyr)
+        library(stringr)
+        library(lubridate)
+        library(ggplot2)
+        library(stringr)
 
 ### Импорт датасета
 
@@ -12,105 +13,44 @@
 
 #### График отправленных байтов по портам
 
-### 1. Нахождение портов с наименее отправленными на них данными
+### Фильтрация и выбор данных по условиям
 
-    dataset %>%
-      select(src, dst, bytes,port) %>%
-      mutate(outside_traffic = (str_detect(src,"^((12|13|14)\\.)") & !str_detect(dst,"^((12|13|14)\\.)"))) %>%
-      filter(outside_traffic == TRUE) %>%
-      group_by(port) %>%
-      summarise(total_data=sum(bytes)) %>%
-      filter(total_data < 5*10^9) %>%
-      select(port) %>%
-      collect() -> ports
-
-    ports <- unlist(ports)
-    ports <- as.vector(ports,'numeric')
-
-### 2. Выборка данных с нужными номерами портов
-
-    dataset %>%
-      select(src, dst, bytes,port) %>%
-      mutate(outside_traffic = (str_detect(src,"^((12|13|14)\\.)") & !str_detect(dst,"^((12|13|14)\\.)"))) %>%
-      filter(outside_traffic == TRUE) %>%
-      filter(port %in% ports) %>%
-      group_by(src,port) %>%
-      summarise(total_bytes=sum(bytes)) %>%
-      arrange(desc(port)) %>%
-      collect() -> dataframe
-
-### 3. Список портов с максимальным количеством данных
-
-    dataframe %>%
-      group_by(src, port) %>%
-      summarise(total_data=sum(total_bytes)) %>%
-      arrange(desc(total_data)) %>%
-      head(10) %>%
+    filtered_table <- dataset %>%
+      filter(src != "13.37.84.125", src != "12.55.77.96", str_detect(src, "^((12|13|14)\\.)") & !str_detect(dst, "^((12|13|14)\\.)")) %>%
+      select(src, bytes, port) %>%
       collect()
 
-    ## # A tibble: 10 × 3
-    ## # Groups:   src [3]
-    ##    src           port total_data
-    ##    <chr>        <int>      <int>
-    ##  1 13.37.84.125    36 2070876332
-    ##  2 13.37.84.125    95 2031985904
-    ##  3 13.37.84.125    21 2027501066
-    ##  4 13.37.84.125    78 2018366254
-    ##  5 13.37.84.125    32 1989408807
-    ##  6 12.55.77.96     31  233345180
-    ##  7 13.48.72.30     26    2468348
-    ##  8 13.48.72.30     61    2465805
-    ##  9 13.48.72.30     77    2453566
-    ## 10 13.48.72.30     79    2421971
+### Сортировка таблицы по порту и группировка по источнику и порту
 
-### 4. Список количества хостов к портам
+    sorted_table <- filtered_table[order(filtered_table$port, decreasing = TRUE), ] %>% 
+                     group_by(src, port)
 
-    dataframe %>%
-      group_by(port) %>%
-      summarise(hosts=n()) %>%
-      arrange(hosts) %>%
-      head(10) %>%
-      collect()
+### Вычисление суммы и среднего значения байтов по порту и объединение данных
 
-    ## # A tibble: 10 × 2
-    ##     port hosts
-    ##    <int> <int>
-    ##  1    21     1
-    ##  2    31     1
-    ##  3    32     1
-    ##  4    36     1
-    ##  5    78     1
-    ##  6    95     1
-    ##  7    51    24
-    ##  8    22  1000
-    ##  9    23  1000
-    ## 10    25  1000
+    total_bytes_table <- sorted_table %>% 
+                  summarize(port_sum = sum(bytes)) %>% 
+                  group_by(port)
 
-### Список количества хостов к портам
+    ## `summarise()` has grouped output by 'src'. You can override using the `.groups`
+    ## argument.
 
-#### На основании предыдущих шагов можно сделать вывод, что злоумышленник использует IP-адрес 12.55.77.96 и порт 31. Это можно сказать, исходя из результатов 4 шага, где видно, что только один хост использовал порт 31, а также из результатов 3 шага, где видно, что наибольшее количество данных было передано именно по этому порту.
+    average_bytes_table <- total_bytes_table %>% 
+                   summarize(port_mean = mean(port_sum))
 
-    dataframe %>%
-      filter(port == 31) %>%
-      group_by(src) %>%
-      summarise(total_data=sum(total_bytes)) %>%
-      collect()
+    merged_data_table <- merge(sorted_table, average_bytes_table, by = "port")
 
-    ## # A tibble: 1 × 2
-    ##   src         total_data
-    ##   <chr>            <int>
-    ## 1 12.55.77.96  233345180
+### Выбор наименьшей разницы источника данных после фильтрации
 
-#### График отправленных байтов по портам
+    filtered_data_ip <- filter(merged_data_table, 
+                      str_detect(src, "13.37.84.125", negate = TRUE) & str_detect(src, "12.55.77.96", negate = TRUE)
+                    )
+    filtered_data_ip$difference <- filtered_data_ip$bytes - filtered_data_ip$port_mean
+    min_diff_index <- which.min(filtered_data_ip$difference)
 
-    dataset %>%
-      select(timestamp, src, dst, bytes, port) %>%
-      mutate(external_traffic = (str_detect(src, "^((12|13|14)\\.)") & !str_detect(dst, "^((12|13|14)\\.)")), 
-             hour = hour(as_datetime(timestamp/1000))) %>%
-      filter(external_traffic == TRUE, hour >= 0 & hour <= 24) %>%
-      group_by(port) %>%
-      summarise(bytes = sum(bytes)) %>%
-      collect() %>%
-      ggplot(., aes(x = port, y = bytes)) +
-      geom_bar(stat = "identity", fill = "blue") +
-      labs(title = "Распределение отправленных байтов по портам", x = "Порт", y = "Количество байтов")
+    min_diff_row <- filtered_data_ip[min_diff_index,]
+    min_diff_row %>% 
+      head(1) %>%
+      select(src)
+
+    ##                   src
+    ## 27962997 15.94.59.123
