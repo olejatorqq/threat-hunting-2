@@ -13,6 +13,9 @@
 
 #### График отправленных байтов по портам
 
+![Image alt](https://github.com/olejatorqq/threat-hunting-2/blob/main/Lab_3/Files/unnamed-chunk-3-1.png)
+
+
 ### Фильтрация и выбор данных по условиям
 
     filtered_table <- dataset %>%
